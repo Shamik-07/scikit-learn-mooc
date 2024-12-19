@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -6,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.5
+#       jupytext_version: 1.14.5
 #   kernelspec:
 #     display_name: Python 3
 #     name: python3
@@ -17,12 +16,12 @@
 #
 # The aim of this exercise is to:
 #
-# * verifying if a random forest or a gradient-boosting decision tree overfit
-#   if the number of estimators is not properly chosen;
-# * use the early-stopping strategy to avoid adding unnecessary trees, to
-#   get the best generalization performances.
+# * verifying if a random forest or a gradient-boosting decision tree overfit if
+#   the number of estimators is not properly chosen;
+# * use the early-stopping strategy to avoid adding unnecessary trees, to get
+#   the best generalization performances.
 #
-# We will use the California housing dataset to conduct our experiments.
+# We use the California housing dataset to conduct our experiments.
 
 # %%
 from sklearn.datasets import fetch_california_housing
@@ -31,7 +30,8 @@ from sklearn.model_selection import train_test_split
 data, target = fetch_california_housing(return_X_y=True, as_frame=True)
 target *= 100  # rescale the target in k$
 data_train, data_test, target_train, target_test = train_test_split(
-    data, target, random_state=0, test_size=0.5)
+    data, target, random_state=0, test_size=0.5
+)
 
 # %% [markdown]
 # ```{note}
@@ -58,36 +58,35 @@ data_train, data_test, target_train, target_test = train_test_split(
 # For both the gradient-boosting and random forest models, create a validation
 # curve using the training set to assess the impact of the number of trees on
 # the performance of each model. Evaluate the list of parameters `param_range =
-# [1, 2, 5, 10, 20, 50, 100]` and use the mean absolute error.
+# np.array([1, 2, 5, 10, 20, 50, 100])` and use the mean absolute error.
 
 # %%
 # Write your code here.
 
 # %% [markdown]
-# Both gradient boosting and random forest models will always improve when
-# increasing the number of trees in the ensemble. However, it will reach a
-# plateau where adding new trees will just make fitting and scoring slower.
+# Both gradient boosting and random forest models improve when increasing the
+# number of trees in the ensemble. However, the scores reach a plateau where
+# adding new trees just makes fitting and scoring slower.
 #
 # To avoid adding new unnecessary tree, unlike random-forest gradient-boosting
-# offers an early-stopping option. Internally, the algorithm will use an
+# offers an early-stopping option. Internally, the algorithm uses an
 # out-of-sample set to compute the generalization performance of the model at
 # each addition of a tree. Thus, if the generalization performance is not
-# improving for several iterations, it will stop adding trees.
+# improving for several iterations, it stops adding trees.
 #
 # Now, create a gradient-boosting model with `n_estimators=1_000`. This number
-# of trees will be too large. Change the parameter `n_iter_no_change` such
-# that the gradient boosting fitting will stop after adding 5 trees that do not
+# of trees is certainly too large. Change the parameter `n_iter_no_change` such
+# that the gradient boosting fitting stops after adding 5 trees that do not
 # improve the overall generalization performance.
 
 # %%
 # Write your code here.
 
 # %% [markdown]
-# Estimate the generalization performance of this model again using
-# the `sklearn.metrics.mean_absolute_error` metric but this time using
-# the test set that we held out at the beginning of the notebook.
-# Compare the resulting value with the values observed in the validation
-# curve.
+# Estimate the generalization performance of this model again using the
+# `sklearn.metrics.mean_absolute_error` metric but this time using the test set
+# that we held out at the beginning of the notebook. Compare the resulting value
+# with the values observed in the validation curve.
 
 # %%
 # Write your code here.

@@ -8,264 +8,274 @@
 # %% [markdown]
 # # 📃 Solution for Exercise M4.04
 #
-# In the previous notebook, we saw the effect of applying some regularization
-# on the coefficient of a linear model.
+# In the previous Module we tuned the hyperparameter `C` of the logistic
+# regression without mentioning that it controls the regularization strength.
+# Later, on the slides on 🎥 **Intuitions on regularized linear models** we
+# mentioned that a small `C` provides a more regularized model, whereas a
+# non-regularized model is obtained with an infinitely large value of `C`.
+# Indeed, `C` behaves as the inverse of the `alpha` coefficient in the `Ridge`
+# model.
 #
-# In this exercise, we will study the advantage of using some regularization
-# when dealing with correlated features.
+# In this exercise, we ask you to train a logistic regression classifier using
+# different values of the parameter `C` to find its effects by yourself.
 #
-# We will first create a regression dataset. This dataset will contain 2,000
-# samples and 5 features from which only 2 features will be informative.
+# We start by loading the dataset. We only keep the Adelie and Chinstrap classes
+# to keep the discussion simple.
+
+
+# %% [markdown]
+# ```{note}
+# If you want a deeper overview regarding this dataset, you can refer to the
+# Appendix - Datasets description section at the end of this MOOC.
+# ```
 
 # %%
-from sklearn.datasets import make_regression
+import pandas as pd
 
-data, target, coef = make_regression(
-    n_samples=2_000,
-    n_features=5,
-    n_informative=2,
-    shuffle=False,
-    coef=True,
-    random_state=0,
-    noise=30,
+penguins = pd.read_csv("../datasets/penguins_classification.csv")
+penguins = (
+    penguins.set_index("Species").loc[["Adelie", "Chinstrap"]].reset_index()
 )
 
-# %% [markdown]
-# When creating the dataset, `make_regression` returns the true coefficient
-# used to generate the dataset. Let's plot this information.
+culmen_columns = ["Culmen Length (mm)", "Culmen Depth (mm)"]
+target_column = "Species"
 
 # %%
-import pandas as pd
-
-feature_names = [
-    "Relevant feature #0",
-    "Relevant feature #1",
-    "Noisy feature #0",
-    "Noisy feature #1",
-    "Noisy feature #2",
-]
-coef = pd.Series(coef, index=feature_names)
-coef.plot.barh()
-coef
-
-# %% [markdown]
-# Create a `LinearRegression` regressor and fit on the entire dataset and
-# check the value of the coefficients. Are the coefficients of the linear
-# regressor close to the coefficients used to generate the dataset?
-
-# %%
-# solution
-from sklearn.linear_model import LinearRegression
-
-linear_regression = LinearRegression()
-linear_regression.fit(data, target)
-linear_regression.coef_
-
-# %% tags=["solution"]
-feature_names = [
-    "Relevant feature #0",
-    "Relevant feature #1",
-    "Noisy feature #0",
-    "Noisy feature #1",
-    "Noisy feature #2",
-]
-coef = pd.Series(linear_regression.coef_, index=feature_names)
-_ = coef.plot.barh()
-
-# %% [markdown] tags=["solution"]
-# We see that the coefficients are close to the coefficients used to generate
-# the dataset. The dispersion is indeed cause by the noise injected during the
-# dataset generation.
-
-# %% [markdown]
-# Now, create a new dataset that will be the same as `data` with 4 additional
-# columns that will repeat twice features 0 and 1. This procedure will create
-# perfectly correlated features.
-
-# %%
-# solution
-import numpy as np
-
-data = np.concatenate([data, data[:, [0, 1]], data[:, [0, 1]]], axis=1)
-
-# %% [markdown]
-# Fit again the linear regressor on this new dataset and check the
-# coefficients. What do you observe?
-
-# %%
-# solution
-linear_regression = LinearRegression()
-linear_regression.fit(data, target)
-linear_regression.coef_
-
-# %% tags=["solution"]
-feature_names = [
-    "Relevant feature #0",
-    "Relevant feature #1",
-    "Noisy feature #0",
-    "Noisy feature #1",
-    "Noisy feature #2",
-    "First repetition of feature #0",
-    "First repetition of  feature #1",
-    "Second repetition of  feature #0",
-    "Second repetition of  feature #1",
-]
-coef = pd.Series(linear_regression.coef_, index=feature_names)
-_ = coef.plot.barh()
-
-# %% [markdown] tags=["solution"]
-# We see that the coefficient values are far from what one could expect.
-# By repeating the informative features, one would have expected these
-# coefficients to be similarly informative.
-#
-# Instead, we see that some coefficients have a huge norm ~1e14. It indeed
-# means that we try to solve an mathematical ill-posed problem. Indeed, finding
-# coefficients in a linear regression involves inverting the matrix
-# `np.dot(data.T, data)` which is not possible (or lead to high numerical
-# errors).
-
-# %% [markdown]
-# Create a ridge regressor and fit on the same dataset. Check the coefficients.
-# What do you observe?
-
-# %%
-# solution
-from sklearn.linear_model import Ridge
-
-ridge = Ridge()
-ridge.fit(data, target)
-ridge.coef_
-
-# %% tags=["solution"]
-coef = pd.Series(ridge.coef_, index=feature_names)
-_ = coef.plot.barh()
-
-# %% [markdown] tags=["solution"]
-# We see that the penalty applied on the weights give a better results: the
-# values of the coefficients do not suffer from numerical issues. Indeed, the
-# matrix to be inverted internally is `np.dot(data.T, data) + alpha * I`.
-# Adding this penalty `alpha` allow the inversion without numerical issue.
-
-# %% [markdown]
-# Can you find the relationship between the ridge coefficients and the original
-# coefficients?
-
-# %%
-# solution
-ridge.coef_[:5] * 3
-
-# %% [markdown] tags=["solution"]
-# Repeating three times each informative features induced to divide the
-# ridge coefficients by three.
-
-# %% [markdown] tags=["solution"]
-# ```{tip}
-# We advise to always use a penalty to shrink the magnitude of the weights
-# toward zero (also called "l2 penalty"). In scikit-learn, `LogisticRegression`
-# applies such penalty by default. However, one needs to use `Ridge` (and even
-# `RidgeCV` to tune the parameter `alpha`) instead of `LinearRegression`.
-#
-# Other kinds of regularizations exist but will not be covered in this course.
-# ```
-#
-# ## Dealing with correlation between one-hot encoded features
-#
-# In this section, we will focus on how to deal with correlated features that
-# arise naturally when one-hot encoding categorical features.
-#
-# Let's first load the Ames housing dataset and take a subset of features that
-# are only categorical features.
-
-# %% tags=["solution"]
-import pandas as pd
 from sklearn.model_selection import train_test_split
 
-ames_housing = pd.read_csv("../datasets/house_prices.csv", na_values='?')
-ames_housing = ames_housing.drop(columns="Id")
-
-categorical_columns = ["Street", "Foundation", "CentralAir", "PavedDrive"]
-target_name = "SalePrice"
-X, y = ames_housing[categorical_columns], ames_housing[target_name]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=0
+penguins_train, penguins_test = train_test_split(
+    penguins, random_state=0, test_size=0.4
 )
 
-# %% [markdown] tags=["solution"]
-#
-# We previously presented that a `OneHotEncoder` creates as many columns as
-# categories. Therefore, there is always one column (i.e. one encoded category)
-# that can be inferred from the others. Thus, `OneHotEncoder` creates
-# collinear features.
-#
-# We illustrate this behaviour by considering the "CentralAir" feature that
-# contains only two categories:
+data_train = penguins_train[culmen_columns]
+data_test = penguins_test[culmen_columns]
 
-# %% tags=["solution"]
-X_train["CentralAir"]
+target_train = penguins_train[target_column]
+target_test = penguins_test[target_column]
 
-# %% tags=["solution"]
-from sklearn.preprocessing import OneHotEncoder
+# %% [markdown]
+# We define a function to help us fit a given `model` and plot its decision
+# boundary. We recall that by using a `DecisionBoundaryDisplay` with diverging
+# colormap, `vmin=0` and `vmax=1`, we ensure that the 0.5 probability is mapped
+# to the white color. Equivalently, the darker the color, the closer the
+# predicted probability is to 0 or 1 and the more confident the classifier is in
+# its predictions.
 
-single_feature = ["CentralAir"]
-encoder = OneHotEncoder(sparse=False, dtype=np.int32)
-X_trans = encoder.fit_transform(X_train[single_feature])
-X_trans = pd.DataFrame(
-    X_trans,
-    columns=encoder.get_feature_names_out(input_features=single_feature),
-)
-X_trans
+# %%
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.inspection import DecisionBoundaryDisplay
 
-# %% [markdown] tags=["solution"]
-#
-# Here, we see that the encoded category "CentralAir_N" is the opposite of the
-# encoded category "CentralAir_Y". Therefore, we observe that using a
-# `OneHotEncoder` creates two features having the problematic pattern observed
-# earlier in this exercise. Training a linear regression model on such a
-# of one-hot encoded binary feature can therefore lead to numerical
-# problems, especially without regularization. Furthermore, the two one-hot
-# features are redundant as they encode exactly the same information in
-# opposite ways.
-#
-# Using regularization helps to overcome the numerical issues that we highlighted
-# earlier in this exercise.
-#
-# Another strategy is to arbitrarily drop one of the encoded categories.
-# Scikit-learn provides such an option by setting the parameter `drop` in the
-# `OneHotEncoder`. This parameter can be set to `first` to always drop the
-# first encoded category or `binary_only` to only drop a column in the case of
-# binary categories.
 
-# %% tags=["solution"]
-encoder = OneHotEncoder(drop="first", sparse=False, dtype=np.int32)
-X_trans = encoder.fit_transform(X_train[single_feature])
-X_trans = pd.DataFrame(
-    X_trans,
-    columns=encoder.get_feature_names_out(input_features=single_feature),
-)
-X_trans
+def plot_decision_boundary(model):
+    model.fit(data_train, target_train)
+    accuracy = model.score(data_test, target_test)
+    C = model.get_params()["logisticregression__C"]
 
-# %% [markdown] tags=["solution"]
-#
-# We see that only the second column of the previous encoded data is kept.
-# Dropping one of the one-hot encoded column is a common practice,
-# especially for binary categorical features. Note however that this breaks
-# symmetry between categories and impacts the number of coefficients of the
-# model, their values, and thus their meaning, especially when applying
-# strong regularization.
-#
-# Let's finally illustrate how to use this option is a machine-learning pipeline:
+    disp = DecisionBoundaryDisplay.from_estimator(
+        model,
+        data_train,
+        response_method="predict_proba",
+        plot_method="pcolormesh",
+        cmap="RdBu_r",
+        alpha=0.8,
+        vmin=0.0,
+        vmax=1.0,
+    )
+    DecisionBoundaryDisplay.from_estimator(
+        model,
+        data_train,
+        response_method="predict_proba",
+        plot_method="contour",
+        linestyles="--",
+        linewidths=1,
+        alpha=0.8,
+        levels=[0.5],
+        ax=disp.ax_,
+    )
+    sns.scatterplot(
+        data=penguins_train,
+        x=culmen_columns[0],
+        y=culmen_columns[1],
+        hue=target_column,
+        palette=["tab:blue", "tab:red"],
+        ax=disp.ax_,
+    )
+    plt.legend(bbox_to_anchor=(1.05, 0.8), loc="upper left")
+    plt.title(f"C: {C} \n Accuracy on the test set: {accuracy:.2f}")
 
-# %% tags=["solution"]
+
+# %% [markdown]
+# Let's now create our predictive model.
+
+# %%
 from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 
-model = make_pipeline(OneHotEncoder(drop="first", dtype=np.int32), Ridge())
-model.fit(X_train, y_train)
-n_categories = [X_train[col].nunique() for col in X_train.columns]
-print(
-    f"R2 score on the testing set: {model.score(X_test, y_test):.2f}"
+logistic_regression = make_pipeline(StandardScaler(), LogisticRegression())
+
+# %% [markdown]
+# ## Influence of the parameter `C` on the decision boundary
+#
+# Given the following candidates for the `C` parameter and the
+# `plot_decision_boundary` function, find out the impact of `C` on the
+# classifier's decision boundary.
+#
+# - How does the value of `C` impact the confidence on the predictions?
+# - How does it impact the underfit/overfit trade-off?
+# - How does it impact the position and orientation of the decision boundary?
+#
+# Try to give an interpretation on the reason for such behavior.
+
+# %%
+Cs = [1e-6, 0.01, 0.1, 1, 10, 100, 1e6]
+
+# solution
+for C in Cs:
+    logistic_regression.set_params(logisticregression__C=C)
+    plot_decision_boundary(logistic_regression)
+
+# %% [markdown] tags=["solution"]
+#
+# On this series of plots we can observe several important points. Regarding the
+# confidence on the predictions:
+#
+# - For low values of `C` (strong regularization), the classifier is less
+#   confident in its predictions. We are enforcing a **spread sigmoid**.
+# - For high values of `C` (weak regularization), the classifier is more
+#   confident: the areas with dark blue (very confident in predicting "Adelie")
+#   and dark red (very confident in predicting "Chinstrap") nearly cover the
+#   entire feature space. We are enforcing a **steep sigmoid**.
+#
+# To answer the next question, think that misclassified data points are more
+# costly when the classifier is more confident on the decision. Decision rules
+# are mostly driven by avoiding such cost. From the previous observations we can
+# then deduce that:
+#
+# - The smaller the `C` (the stronger the regularization), the lower the cost
+#   of a misclassification. As more data points lay in the low-confidence
+#   zone, the more the decision rules are influenced almost uniformly by all
+#   the data points. This leads to a less expressive model, which may underfit.
+# - The higher the value of `C` (the weaker the regularization), the more the
+#   decision is influenced by a few training points very close to the boundary,
+#   where decisions are costly. Remember that models may overfit if the number
+#   of samples in the training set is too small, as at least a minimum of
+#   samples is needed to average the noise out.
+#
+# The orientation is the result of two factors: minimizing the number of
+# misclassified training points with high confidence and their distance to the
+# decision boundary (notice how the contour line tries to align with the most
+# misclassified data points in the dark-colored zone). This is closely related
+# to the value of the weights of the model, which is explained in the next part
+# of the exercise.
+#
+# Finally, for small values of `C` the position of the decision boundary is
+# affected by the class imbalance: when `C` is near zero, the model predicts the
+# majority class (as seen in the training set) everywhere in the feature space.
+# In our case, there are approximately two times more "Adelie" than "Chinstrap"
+# penguins. This explains why the decision boundary is shifted to the right when
+# `C` gets smaller. Indeed, the most regularized model predicts light blue
+# almost everywhere in the feature space.
+
+# %% [markdown]
+# ## Impact of the regularization on the weights
+#
+# Look at the impact of the `C` hyperparameter on the magnitude of the weights.
+# **Hint**: You can [access pipeline
+# steps](https://scikit-learn.org/stable/modules/compose.html#access-pipeline-steps)
+# by name or position. Then you can query the attributes of that step such as
+# `coef_`.
+
+# %%
+# solution
+lr_weights = []
+for C in Cs:
+    logistic_regression.set_params(logisticregression__C=C)
+    logistic_regression.fit(data_train, target_train)
+    coefs = logistic_regression[-1].coef_[0]
+    lr_weights.append(pd.Series(coefs, index=culmen_columns))
+
+# %% tags=["solution"]
+lr_weights = pd.concat(lr_weights, axis=1, keys=[f"C: {C}" for C in Cs])
+lr_weights.plot.barh()
+_ = plt.title("LogisticRegression weights depending of C")
+
+# %% [markdown] tags=["solution"]
+#
+# As small `C` provides a more regularized model, it shrinks the weights values
+# toward zero, as in the `Ridge` model.
+#
+# In particular, with a strong penalty (e.g. `C = 0.01`), the weight of the feature
+# named "Culmen Depth (mm)" is almost zero. It explains why the decision
+# separation in the plot is almost perpendicular to the "Culmen Length (mm)"
+# feature.
+#
+# For even stronger penalty strengths (e.g. `C = 1e-6`), the weights of both
+# features are almost zero. It explains why the decision separation in the plot
+# is almost constant in the feature space: the predicted probability is only
+# based on the intercept parameter of the model (which is never regularized).
+
+# %% [markdown]
+# ## Impact of the regularization on with non-linear feature engineering
+#
+# Use the `plot_decision_boundary` function to repeat the experiment using a
+# non-linear feature engineering pipeline. For such purpose, insert
+# `Nystroem(kernel="rbf", gamma=1, n_components=100)` between the
+# `StandardScaler` and the `LogisticRegression` steps.
+#
+# - Does the value of `C` still impact the position of the decision boundary and
+#   the confidence of the model?
+# - What can you say about the impact of `C` on the underfitting vs overfitting
+#   trade-off?
+
+# %%
+from sklearn.kernel_approximation import Nystroem
+
+# solution
+classifier = make_pipeline(
+    StandardScaler(),
+    Nystroem(kernel="rbf", gamma=1.0, n_components=100, random_state=0),
+    LogisticRegression(max_iter=1000),
 )
-print(
-    f"Our model contains {model[-1].coef_.size} features while "
-    f"{sum(n_categories)} categories are originally available."
-)
+
+for C in Cs:
+    classifier.set_params(logisticregression__C=C)
+    plot_decision_boundary(classifier)
+
+# %% [markdown] tags=["solution"]
+#
+# - For the lowest values of `C`, the overall pipeline underfits: it predicts
+#   the majority class everywhere, as previously.
+# - When `C` increases, the models starts to predict some datapoints from the
+#   "Chinstrap" class but the model is not very confident anywhere in the
+#   feature space.
+# - The decision boundary is no longer a straight line: the linear model is now
+#   classifying in the 100-dimensional feature space created by the `Nystroem`
+#   transformer. As are result, the decision boundary induced by the overall
+#   pipeline is now expressive enough to wrap around the minority class.
+# - For `C = 1` in particular, it finds a smooth red blob around most of the
+#   "Chinstrap" data points. When moving away from the data points, the model is
+#   less confident in its predictions and again tends to predict the majority
+#   class according to the proportion in the training set.
+# - For higher values of `C`, the model starts to overfit: it is very confident
+#   in its predictions almost everywhere, but it should not be trusted: the
+#   model also makes a larger number of mistakes on the test set (not shown in
+#   the plot) while adopting a very curvy decision boundary to attempt fitting
+#   all the training points, including the noisy ones at the frontier between
+#   the two classes. This makes the decision boundary very sensitive to the
+#   sampling of the training set and as a result, it does not generalize well in
+#   that region. This is confirmed by the (slightly) lower accuracy on the test
+#   set.
+#
+# Finally, we can also note that the linear model on the raw features was as
+# good or better than the best model using non-linear feature engineering. So in
+# this case, we did not really need this extra complexity in our pipeline.
+# **Simpler is better!**
+#
+# So to conclude, when using non-linear feature engineering, it is often
+# possible to make the pipeline overfit, even if the original feature space is
+# low-dimensional. As a result, it is important to tune the regularization
+# parameter in conjunction with the parameters of the transformers (e.g. tuning
+# `gamma` would be important here). This has a direct impact on the certainty of
+# the predictions.

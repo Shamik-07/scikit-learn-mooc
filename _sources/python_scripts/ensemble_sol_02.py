@@ -22,7 +22,8 @@ feature_name = "Flipper Length (mm)"
 target_name = "Body Mass (g)"
 data, target = penguins[[feature_name]], penguins[target_name]
 data_train, data_test, target_train, target_test = train_test_split(
-    data, target, random_state=0)
+    data, target, random_state=0
+)
 
 # %% [markdown]
 # ```{note}
@@ -31,9 +32,8 @@ data_train, data_test, target_train, target_test = train_test_split(
 # ```
 
 # %% [markdown]
-# Create a random forest containing three trees. Train the forest and
-# check the generalization performance on the testing set in terms of mean
-# absolute error.
+# Create a random forest containing three trees. Train the forest and check the
+# generalization performance on the testing set in terms of mean absolute error.
 
 # %%
 # solution
@@ -43,55 +43,70 @@ from sklearn.ensemble import RandomForestRegressor
 forest = RandomForestRegressor(n_estimators=3)
 forest.fit(data_train, target_train)
 target_predicted = forest.predict(data_test)
-print(f"Mean absolute error: "
-      f"{mean_absolute_error(target_test, target_predicted):.3f} grams")
+print(
+    "Mean absolute error: "
+    f"{mean_absolute_error(target_test, target_predicted):.3f} grams"
+)
 
 # %% [markdown]
-# The next steps of this exercise are to:
-#
-# - create a new dataset containing the penguins with a flipper length
-#   between 170 mm and 230 mm;
-# - plot the training data using a scatter plot;
-# - plot the decision of each individual tree by predicting on the newly
-#   created dataset;
-# - plot the decision of the random forest using this newly created dataset.
-
-# ```{tip}
-# The trees contained in the forest that you created can be accessed
-# with the attribute `estimators_`.
-# ```
-
-# %% [markdown] tags=["solution"]
-# In a first cell, we will collect all the required predictions from the
-# different trees and forest.
+# We now aim to plot the predictions from the individual trees in the forest.
+# For that purpose you have to create first a new dataset containing evenly
+# spaced values for the flipper length over the interval between 170 mm and 230
+# mm.
 
 # %%
 # solution
 import numpy as np
 
-data_range = pd.DataFrame(np.linspace(170, 235, num=300),
-                          columns=data.columns)
+data_range = pd.DataFrame(np.linspace(170, 235, num=300), columns=data.columns)
+
+# %% [markdown]
+# The trees contained in the forest that you created can be accessed with the
+# attribute `estimators_`. Use them to predict the body mass corresponding to
+# the values in this newly created dataset. Similarly find the predictions of
+# the random forest in this dataset.
+
+# %%
+# solution
 tree_predictions = []
+
 for tree in forest.estimators_:
     # we convert `data_range` into a NumPy array to avoid a warning raised in scikit-learn
     tree_predictions.append(tree.predict(data_range.to_numpy()))
 
 forest_predictions = forest.predict(data_range)
 
-# %% [markdown] tags=["solution"]
-# Now, we can plot the predictions that we collected.
+# %% [markdown]
+# Now make a plot that displays:
+# - the whole `data` using a scatter plot;
+# - the decision of each individual tree;
+# - the decision of the random forest.
 
-# %% tags=["solution"]
+# %%
+# solution
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-sns.scatterplot(data=penguins, x=feature_name, y=target_name,
-                color="black", alpha=0.5)
+sns.scatterplot(
+    data=penguins, x=feature_name, y=target_name, color="black", alpha=0.5
+)
 
 # plot tree predictions
 for tree_idx, predictions in enumerate(tree_predictions):
-    plt.plot(data_range[feature_name], predictions, label=f"Tree #{tree_idx}",
-             linestyle="--", alpha=0.8)
+    plt.plot(
+        data_range[feature_name],
+        predictions,
+        label=f"Tree #{tree_idx}",
+        linestyle="--",
+        alpha=0.8,
+    )
 
-plt.plot(data_range[feature_name], forest_predictions, label=f"Random forest")
+plt.plot(data_range[feature_name], forest_predictions, label="Random forest")
 _ = plt.legend(bbox_to_anchor=(1.05, 0.8), loc="upper left")
+
+# %% [markdown] tags=["solution"]
+# The random forest reduces the overfitting of the individual trees but still
+# overfits itself. In the section on "hyperparameter tuning with ensemble
+# methods" we will see how to further mitigate this effect. Still, interested
+# users may increase the number of estimators in the forest and try different
+# values of, e.g., `min_samples_split`.

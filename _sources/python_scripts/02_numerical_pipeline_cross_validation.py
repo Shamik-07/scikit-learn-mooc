@@ -8,12 +8,12 @@
 # %% [markdown]
 # # Model evaluation using cross-validation
 #
-# In this notebook, we will still use only numerical features.
+# In this notebook, we still use numerical features only.
 #
-# We will discuss the practical aspects of assessing the generalization
+# Here we discuss the practical aspects of assessing the generalization
 # performance of our model via **cross-validation** instead of a single
 # train-test split.
-# 
+#
 # ## Data preparation
 #
 # First, let's load the full adult census dataset.
@@ -24,8 +24,8 @@ import pandas as pd
 adult_census = pd.read_csv("../datasets/adult-census.csv")
 
 # %% [markdown]
-# We will now drop the target from the data we will use to train our
-# predictive model.
+# We now drop the target from the data we will use to train our predictive
+# model.
 
 # %%
 target_name = "class"
@@ -56,11 +56,11 @@ model = make_pipeline(StandardScaler(), LogisticRegression())
 # ## The need for cross-validation
 #
 # In the previous notebook, we split the original data into a training set and a
-# testing set. The score of a model will in general depend on the way we make
-# such a split. One downside of doing a single split is that it does not give
-# any information about this variability. Another downside, in a setting where
-# the amount of data is small, is that the data available for training and
-# testing will be even smaller after splitting.
+# testing set. The score of a model in general depends on the way we make such a
+# split. One downside of doing a single split is that it does not give any
+# information about this variability. Another downside, in a setting where the
+# amount of data is small, is that the data available for training and testing
+# would be even smaller after splitting.
 #
 # Instead, we can use cross-validation. Cross-validation consists of repeating
 # the procedure such that the training and testing sets are different each time.
@@ -69,8 +69,8 @@ model = make_pipeline(StandardScaler(), LogisticRegression())
 # model's generalization performance.
 #
 # Note that there exists several cross-validation strategies, each of them
-# defines how to repeat the `fit`/`score` procedure. In this section, we will
-# use the K-fold strategy: the entire dataset is split into `K` partitions. The
+# defines how to repeat the `fit`/`score` procedure. In this section, we use the
+# K-fold strategy: the entire dataset is split into `K` partitions. The
 # `fit`/`score` procedure is repeated `K` times where at each iteration `K - 1`
 # partitions are used to fit the model and `1` partition is used to score. The
 # figure below illustrates this K-fold strategy.
@@ -79,10 +79,11 @@ model = make_pipeline(StandardScaler(), LogisticRegression())
 #
 # ```{note}
 # This figure shows the particular case of **K-fold** cross-validation strategy.
-# For each cross-validation split, the procedure trains a clone of model on all the red
-# samples and evaluate the score of the model on the blue samples.
-# As mentioned earlier, there is a variety of different cross-validation
-# strategies. Some of these aspects will be covered in more detail in future notebooks.
+# For each cross-validation split, the procedure trains a clone of model on all
+# the red samples and evaluate the score of the model on the blue samples. As
+# mentioned earlier, there is a variety of different cross-validation
+# strategies. Some of these aspects will be covered in more detail in future
+# notebooks.
 # ```
 #
 # Cross-validation is therefore computationally intensive because it requires
@@ -105,8 +106,10 @@ cv_result
 # The output of `cross_validate` is a Python dictionary, which by default
 # contains three entries:
 # - (i) the time to train the model on the training data for each fold,
+#   `fit_time`
 # - (ii) the time to predict with the model on the testing data for each fold,
-# - (iii) the default score on the testing data for each fold.
+#   `score_time`
+# - (iii) the default score on the testing data for each fold, `test_score`.
 #
 # Setting `cv=5` created 5 distinct splits to get 5 variations for the training
 # and testing sets. Each training set is used to fit one model which is then
@@ -126,7 +129,7 @@ cv_result
 # [`sklearn.model_selection.cross_validate`](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html)
 # to collect additional information, such as the training scores of the models
 # obtained on each round or even return the models themselves instead of
-# discarding them.  These features will be covered in a future notebook.
+# discarding them. These features will be covered in a future notebook.
 #
 # Let's extract the scores computed on the test fold of each cross-validation
 # round from the `cv_result` dictionary and compute the mean accuracy and the
@@ -136,7 +139,7 @@ cv_result
 scores = cv_result["test_score"]
 print(
     "The mean cross-validation accuracy is: "
-    f"{scores.mean():.3f} +/- {scores.std():.3f}"
+    f"{scores.mean():.3f} ± {scores.std():.3f}"
 )
 
 # %% [markdown]
@@ -144,13 +147,15 @@ print(
 # we can estimate the uncertainty of our model generalization performance. This
 # is the main advantage of cross-validation and can be crucial in practice, for
 # example when comparing different models to figure out whether one is better
-# than the other or whether our measures of the generalization performance of each
-# model are within the error bars of one-another.
+# than the other or whether our measures of the generalization performance of
+# each model are within the error bars of one-another.
 #
 # In this particular case, only the first 2 decimals seem to be trustworthy. If
 # you go up in this notebook, you can check that the performance we get with
 # cross-validation is compatible with the one from a single train-test split.
 
 # %% [markdown]
+# ## Notebook recap
+#
 # In this notebook we assessed the generalization performance of our model via
 # **cross-validation**.

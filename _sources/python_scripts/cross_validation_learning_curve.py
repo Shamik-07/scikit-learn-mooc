@@ -13,7 +13,7 @@
 # generalizing. Besides these aspects, it is also important to understand how
 # the different errors are influenced by the number of samples available.
 #
-# In this notebook, we will show this aspect by looking a the variability of
+# In this notebook, we will show this aspect by looking at the variability of
 # the different errors.
 #
 # Let's first load the data and create the same model as in the previous
@@ -58,6 +58,7 @@ regressor = DecisionTreeRegressor()
 
 # %%
 import numpy as np
+
 train_sizes = np.linspace(0.1, 1.0, num=5, endpoint=True)
 train_sizes
 
@@ -73,31 +74,22 @@ cv = ShuffleSplit(n_splits=30, test_size=0.2)
 # Now, we are all set to carry out the experiment.
 
 # %%
-from sklearn.model_selection import learning_curve
+from sklearn.model_selection import LearningCurveDisplay
 
-results = learning_curve(
-    regressor, data, target, train_sizes=train_sizes, cv=cv,
-    scoring="neg_mean_absolute_error", n_jobs=2)
-train_size, train_scores, test_scores = results[:3]
-# Convert the scores into errors
-train_errors, test_errors = -train_scores, -test_scores
-
-# %% [markdown]
-# Now, we can plot the curve.
-
-# %%
-import matplotlib.pyplot as plt
-
-plt.errorbar(train_size, train_errors.mean(axis=1),
-             yerr=train_errors.std(axis=1), label="Training error")
-plt.errorbar(train_size, test_errors.mean(axis=1),
-             yerr=test_errors.std(axis=1), label="Testing error")
-plt.legend()
-
-plt.xscale("log")
-plt.xlabel("Number of samples in the training set")
-plt.ylabel("Mean absolute error (k$)")
-_ = plt.title("Learning curve for decision tree")
+display = LearningCurveDisplay.from_estimator(
+    regressor,
+    data,
+    target,
+    train_sizes=train_sizes,
+    cv=cv,
+    score_type="both",  # both train and test errors
+    scoring="neg_mean_absolute_error",
+    negate_score=True,  # to use when metric starts with "neg_"
+    score_name="Mean absolute error (k$)",
+    std_display_style="errorbar",
+    n_jobs=2,
+)
+_ = display.ax_.set(xscale="log", title="Learning curve for decision tree")
 
 # %% [markdown]
 # Looking at the training error alone, we see that we get an error of 0 k$. It
@@ -110,10 +102,14 @@ _ = plt.title("Learning curve for decision tree")
 # benefit to adding samples anymore or assessing the potential gain of adding
 # more samples into the training set.
 #
-# If we achieve a plateau and adding new samples in the training set does not
-# reduce the testing error, we might have reach the Bayes error rate using the
-# available model. Using a more complex model might be the only possibility to
-# reduce the testing error further.
+# If the testing error plateaus despite adding more training samples, it's
+# possible that the model has achieved its optimal performance. In this case,
+# using a more expressive model might help reduce the error further. Otherwise,
+# the error may have reached the Bayes error rate, the theoretical minimum error
+# due to inherent uncertainty not resolved by the available data. This minimum error is
+# non-zero whenever some of the variation of the target variable `y` depends on
+# external factors not fully observed in the features available in `X`, which is
+# almost always the case in practice.
 #
 # ## Summary
 #

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -6,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.5
+#       jupytext_version: 1.14.5
 #   kernelspec:
 #     display_name: Python 3
 #     name: python3
@@ -15,16 +14,13 @@
 # %% [markdown]
 # # 📝 Exercise M5.01
 #
-# In the previous notebook, we showed how a tree with a depth of 1 level was
-# working. The aim of this exercise is to repeat part of the previous
-# experiment for a depth with 2 levels to show how the process of partitioning
-# is repeated over time.
+# In the previous notebook, we showed how a tree with 1 level depth works. The
+# aim of this exercise is to repeat part of the previous experiment for a tree
+# with 2 levels depth to show how such parameter affects the feature space
+# partitioning.
 #
-# Before to start, we will:
-#
-# * load the dataset;
-# * split the dataset into training and testing dataset;
-# * define the function to show the classification decision function.
+# We first load the penguins dataset and split it into a training and a testing
+# sets:
 
 # %%
 import pandas as pd
@@ -48,18 +44,32 @@ data_train, data_test, target_train, target_test = train_test_split(
 )
 
 # %% [markdown]
-# Create a decision tree classifier with a maximum depth of 2 levels and fit
-# the training data. Once this classifier trained, plot the data and the
-# decision boundary to see the benefit of increasing the depth. To plot the
-# decision boundary, you should import the class `DecisionBoundaryDisplay`
-# from the module `helpers.plotting` as shown in the previous course notebook.
+# Create a decision tree classifier with a maximum depth of 2 levels and fit the
+# training data.
 
 # %%
 # Write your code here.
 
 # %% [markdown]
-# Did we make use of the feature "Culmen Length"?
-# Plot the tree using the function `sklearn.tree.plot_tree` to find out!
+# Now plot the data and the decision boundary of the trained classifier to see
+# the effect of increasing the depth of the tree.
+#
+# Hint: Use the class `DecisionBoundaryDisplay` from the module
+# `sklearn.inspection` as shown in previous course notebooks.
+#
+# ```{warning}
+# At this time, it is not possible to use `response_method="predict_proba"` for
+# multiclass problems. This is a planned feature for a future version of
+# scikit-learn. In the mean time, you can use `response_method="predict"`
+# instead.
+# ```
+
+# %%
+# Write your code here.
+
+# %% [markdown]
+# Did we make use of the feature "Culmen Length"? Plot the tree using the
+# function `sklearn.tree.plot_tree` to find out!
 
 # %%
 # Write your code here.
